@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Wallets from "./pages/Wallets";
 import Insights from "./pages/Insights";
 import Profile from "./pages/Profile";
+import History from "./pages/History";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/wallets" element={<Wallets />} />
           <Route path="/insights" element={<Insights />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/history" element={<History />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

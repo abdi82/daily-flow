@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
-import { ArrowUpRight, ArrowDownLeft, Wallet, ShoppingBag, Car, Utensils } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Wallet, ShoppingBag, Car, Utensils, Receipt, Film } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type TransactionType = "incoming" | "outgoing";
-type TransactionCategory = "transfer" | "shopping" | "transport" | "food";
+export type TransactionType = "incoming" | "outgoing";
+export type TransactionCategory = "transfer" | "shopping" | "transport" | "food" | "bills" | "entertainment";
 
 interface TransactionItemProps {
   type: TransactionType;
@@ -14,11 +14,13 @@ interface TransactionItemProps {
   delay?: number;
 }
 
-const categoryIcons = {
+const categoryIcons: Record<TransactionCategory, React.ComponentType<{ className?: string }>> = {
   transfer: Wallet,
   shopping: ShoppingBag,
   transport: Car,
   food: Utensils,
+  bills: Receipt,
+  entertainment: Film,
 };
 
 export function TransactionItem({
