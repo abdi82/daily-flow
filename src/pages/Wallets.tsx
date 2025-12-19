@@ -7,6 +7,8 @@ import {
 import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Button } from "@/components/ui/button";
+import { AddMoneyModal, SendMoneyModal } from "@/components/modals";
+import { toast } from "sonner";
 
 interface WalletDetailProps {
   title: string;
@@ -16,10 +18,12 @@ interface WalletDetailProps {
   description: string;
   isLocked?: boolean;
   releaseInfo?: string;
+  onAdd?: () => void;
+  onWithdraw?: () => void;
 }
 
 function WalletDetailCard({ 
-  title, amount, color, icon, description, isLocked, releaseInfo 
+  title, amount, color, icon, description, isLocked, releaseInfo, onAdd, onWithdraw 
 }: WalletDetailProps) {
   return (
     <motion.div
@@ -57,6 +61,7 @@ function WalletDetailCard({
           size="sm" 
           variant="glass"
           className="flex-1 text-white border-white/30 hover:bg-white/20"
+          onClick={onAdd}
         >
           <Plus className="h-4 w-4" /> Add
         </Button>
@@ -65,6 +70,7 @@ function WalletDetailCard({
           variant="glass"
           className="flex-1 text-white border-white/30 hover:bg-white/20"
           disabled={isLocked}
+          onClick={onWithdraw}
         >
           <Minus className="h-4 w-4" /> Withdraw
         </Button>
@@ -77,11 +83,36 @@ function WalletDetailCard({
 
 export default function WalletsPage() {
   const [activeTab, setActiveTab] = useState("wallets");
+  const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
+  const [isSendMoneyOpen, setIsSendMoneyOpen] = useState(false);
+  
+  const [walletBalances, setWalletBalances] = useState({
+    daily: 100,
+    weekly: 375,
+    monthly: 1500,
+    savings: 4525,
+  });
+
+  const handleAddMoneySuccess = (amount: number) => {
+    setWalletBalances(prev => ({
+      ...prev,
+      savings: prev.savings + amount
+    }));
+    toast.success("Money added successfully!");
+  };
+
+  const handleSendMoneySuccess = (amount: number) => {
+    setWalletBalances(prev => ({
+      ...prev,
+      daily: Math.max(0, prev.daily - amount)
+    }));
+    toast.success("Money sent successfully!");
+  };
 
   const wallets = [
     {
       title: "Daily Wallet",
-      amount: 100,
+      amount: walletBalances.daily,
       color: "bg-gradient-to-br from-primary to-primary-glow",
       icon: <Wallet className="h-6 w-6 text-white" />,
       description: "Releases KES 100 every morning at 6:00 AM",
@@ -90,7 +121,7 @@ export default function WalletsPage() {
     },
     {
       title: "Weekly Wallet",
-      amount: 375,
+      amount: walletBalances.weekly,
       color: "bg-gradient-to-br from-[hsl(200,85%,45%)] to-[hsl(200,85%,55%)]",
       icon: <Calendar className="h-6 w-6 text-white" />,
       description: "Releases every Sunday at midnight",
@@ -99,7 +130,7 @@ export default function WalletsPage() {
     },
     {
       title: "Monthly Wallet",
-      amount: 1500,
+      amount: walletBalances.monthly,
       color: "bg-gradient-to-br from-[hsl(260,70%,55%)] to-[hsl(260,70%,65%)]",
       icon: <CalendarDays className="h-6 w-6 text-white" />,
       description: "For rent, bills, and monthly obligations",
@@ -108,7 +139,7 @@ export default function WalletsPage() {
     },
     {
       title: "Savings (MMF)",
-      amount: 4525,
+      amount: walletBalances.savings,
       color: "bg-gradient-to-br from-accent to-accent-glow",
       icon: <PiggyBank className="h-6 w-6 text-accent-foreground" />,
       description: "Earning 13% annual interest • Instant access",
@@ -116,6 +147,9 @@ export default function WalletsPage() {
       releaseInfo: "Interest earned today: KES 1.60",
     },
   ];
+
+  const totalBalance = walletBalances.daily + walletBalances.weekly + 
+                       walletBalances.monthly + walletBalances.savings;
 
   return (
     <div className="min-h-screen bg-background">
@@ -142,10 +176,15 @@ export default function WalletsPage() {
           >
             <p className="text-sm text-muted-foreground">Total Balance</p>
             <p className="text-3xl font-bold text-foreground">
-              KES {(100 + 375 + 1500 + 4525).toLocaleString()}
+              KES {totalBalance.toLocaleString()}
             </p>
             <div className="mt-3 flex items-center gap-2">
-              <Button size="sm" variant="hero" className="flex-1">
+              <Button 
+                size="sm" 
+                variant="hero" 
+                className="flex-1"
+                onClick={() => setIsAddMoneyOpen(true)}
+              >
                 <Plus className="h-4 w-4" /> Add Money
               </Button>
               <Button size="sm" variant="outline" className="flex-1">
@@ -163,7 +202,11 @@ export default function WalletsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <WalletDetailCard {...wallet} />
+                <WalletDetailCard 
+                  {...wallet}
+                  onAdd={() => setIsAddMoneyOpen(true)}
+                  onWithdraw={() => setIsSendMoneyOpen(true)}
+                />
               </motion.div>
             ))}
           </div>
@@ -171,6 +214,20 @@ export default function WalletsPage() {
       </div>
 
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Modals */}
+      <AddMoneyModal
+        isOpen={isAddMoneyOpen}
+        onClose={() => setIsAddMoneyOpen(false)}
+        onSuccess={handleAddMoneySuccess}
+      />
+
+      <SendMoneyModal
+        isOpen={isSendMoneyOpen}
+        onClose={() => setIsSendMoneyOpen(false)}
+        availableBalance={walletBalances.daily}
+        onSuccess={handleSendMoneySuccess}
+      />
     </div>
   );
 }
