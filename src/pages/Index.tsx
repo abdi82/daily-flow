@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Wallet, Calendar, CalendarDays, PiggyBank, ChevronRight } from "lucide-react";
 import { Header } from "@/components/layout/Header";
@@ -8,7 +9,7 @@ import { InterestBanner } from "@/components/wallet/InterestBanner";
 import { QuickActions } from "@/components/wallet/QuickActions";
 import { NudgeCard } from "@/components/wallet/NudgeCard";
 import { TransactionItem } from "@/components/wallet/TransactionItem";
-import { AddMoneyModal, SendMoneyModal } from "@/components/modals";
+import { AddMoneyModal, SendMoneyModal, ReallocateModal } from "@/components/modals";
 import { toast } from "sonner";
 
 type TransactionType = "incoming" | "outgoing";
@@ -38,6 +39,7 @@ const mockTransactions: Transaction[] = [
 ];
 
 export default function Index() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("home");
   const [showNudge, setShowNudge] = useState(true);
   const [walletData, setWalletData] = useState(initialWalletData);
@@ -46,6 +48,7 @@ export default function Index() {
   // Modal states
   const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
   const [isSendMoneyOpen, setIsSendMoneyOpen] = useState(false);
+  const [isReallocateOpen, setIsReallocateOpen] = useState(false);
 
   const handleAddMoney = () => {
     setIsAddMoneyOpen(true);
@@ -106,12 +109,33 @@ export default function Index() {
     });
   };
 
-  const handleAdjustPlan = () => {
-    toast.info("Adjust Plan", { description: "Feature coming soon!" });
+  const handleReallocate = () => {
+    setIsReallocateOpen(true);
+  };
+
+  const handleReallocateSuccess = (from: string, to: string, amount: number) => {
+    const fromKey = from as keyof typeof walletData;
+    const toKey = to as keyof typeof walletData;
+    
+    setWalletData(prev => ({
+      ...prev,
+      [fromKey]: {
+        ...prev[fromKey],
+        amount: (prev[fromKey].amount || 0) - amount
+      },
+      [toKey]: {
+        ...prev[toKey],
+        amount: (prev[toKey].amount || 0) + amount
+      }
+    }));
+    
+    toast.success("Funds reallocated!", {
+      description: `KES ${amount.toLocaleString()} moved successfully`
+    });
   };
 
   const handleHistory = () => {
-    toast.info("Transaction History", { description: "Feature coming soon!" });
+    navigate("/history");
   };
 
   const totalBalance = walletData.daily.amount + walletData.weekly.amount + 
@@ -193,7 +217,7 @@ export default function Index() {
           <QuickActions
             onAddMoney={handleAddMoney}
             onSendMoney={handleSendMoney}
-            onAdjustPlan={handleAdjustPlan}
+            onReallocate={handleReallocate}
             onHistory={handleHistory}
           />
 
@@ -208,7 +232,10 @@ export default function Index() {
               <h2 className="text-lg font-semibold text-foreground">
                 Recent Activity
               </h2>
-              <button className="flex items-center gap-1 text-sm text-primary font-medium hover:text-primary-glow transition-colors">
+              <button 
+                onClick={() => navigate("/history")}
+                className="flex items-center gap-1 text-sm text-primary font-medium hover:text-primary-glow transition-colors"
+              >
                 See all
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -246,6 +273,18 @@ export default function Index() {
         onClose={() => setIsSendMoneyOpen(false)}
         availableBalance={walletData.daily.amount}
         onSuccess={handleSendMoneySuccess}
+      />
+
+      <ReallocateModal
+        isOpen={isReallocateOpen}
+        onClose={() => setIsReallocateOpen(false)}
+        walletBalances={{
+          daily: walletData.daily.amount,
+          weekly: walletData.weekly.amount,
+          monthly: walletData.monthly.amount,
+          savings: walletData.savings.amount,
+        }}
+        onSuccess={handleReallocateSuccess}
       />
     </div>
   );

@@ -1,24 +1,24 @@
 import { motion } from "framer-motion";
-import { Plus, Send, ArrowUpDown, History } from "lucide-react";
+import { Plus, Send, ArrowLeftRight, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface QuickActionsProps {
   onAddMoney: () => void;
   onSendMoney: () => void;
-  onAdjustPlan: () => void;
+  onReallocate: () => void;
   onHistory: () => void;
 }
 
 export function QuickActions({
   onAddMoney,
   onSendMoney,
-  onAdjustPlan,
+  onReallocate,
   onHistory,
 }: QuickActionsProps) {
   const actions = [
     { label: "Add Money", icon: Plus, onClick: onAddMoney, variant: "hero" as const },
     { label: "Send Money", icon: Send, onClick: onSendMoney, variant: "outline" as const },
-    { label: "Adjust Plan", icon: ArrowUpDown, onClick: onAdjustPlan, variant: "secondary" as const },
+    { label: "Reallocate", icon: ArrowLeftRight, onClick: onReallocate, variant: "secondary" as const },
     { label: "History", icon: History, onClick: onHistory, variant: "ghost" as const },
   ];
 
