@@ -8,33 +8,102 @@ import { InterestBanner } from "@/components/wallet/InterestBanner";
 import { QuickActions } from "@/components/wallet/QuickActions";
 import { NudgeCard } from "@/components/wallet/NudgeCard";
 import { TransactionItem } from "@/components/wallet/TransactionItem";
+import { AddMoneyModal, SendMoneyModal } from "@/components/modals";
 import { toast } from "sonner";
 
+type TransactionType = "incoming" | "outgoing";
+type TransactionCategory = "transfer" | "shopping" | "transport" | "food";
+
+interface Transaction {
+  type: TransactionType;
+  category: TransactionCategory;
+  title: string;
+  amount: number;
+  time: string;
+}
+
 // Mock data for demonstration
-const mockWalletData = {
+const initialWalletData = {
   daily: { amount: 100, progress: 60 },
   weekly: { amount: 375 },
   monthly: { amount: 1500 },
   savings: { amount: 4525, interest: 1.60 },
 };
 
-const mockTransactions = [
-  { type: "outgoing" as const, category: "transport" as const, title: "Matatu to Work", amount: 60, time: "8:30 AM" },
-  { type: "outgoing" as const, category: "food" as const, title: "Lunch - Mama Pima", amount: 80, time: "1:15 PM" },
-  { type: "incoming" as const, category: "transfer" as const, title: "M-Pesa Deposit", amount: 1200, time: "Yesterday" },
-  { type: "outgoing" as const, category: "shopping" as const, title: "Airtime Purchase", amount: 50, time: "Yesterday" },
+const mockTransactions: Transaction[] = [
+  { type: "outgoing", category: "transport", title: "Matatu to Work", amount: 60, time: "8:30 AM" },
+  { type: "outgoing", category: "food", title: "Lunch - Mama Pima", amount: 80, time: "1:15 PM" },
+  { type: "incoming", category: "transfer", title: "M-Pesa Deposit", amount: 1200, time: "Yesterday" },
+  { type: "outgoing", category: "shopping", title: "Airtime Purchase", amount: 50, time: "Yesterday" },
 ];
 
 export default function Index() {
   const [activeTab, setActiveTab] = useState("home");
   const [showNudge, setShowNudge] = useState(true);
+  const [walletData, setWalletData] = useState(initialWalletData);
+  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
+  
+  // Modal states
+  const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
+  const [isSendMoneyOpen, setIsSendMoneyOpen] = useState(false);
 
   const handleAddMoney = () => {
-    toast.success("Add Money", { description: "Feature coming soon!" });
+    setIsAddMoneyOpen(true);
   };
 
   const handleSendMoney = () => {
-    toast.success("Send Money", { description: "Feature coming soon!" });
+    setIsSendMoneyOpen(true);
+  };
+
+  const handleAddMoneySuccess = (amount: number) => {
+    // Update wallet balance
+    setWalletData(prev => ({
+      ...prev,
+      savings: {
+        ...prev.savings,
+        amount: prev.savings.amount + amount
+      }
+    }));
+    
+    // Add transaction to history
+    const newTransaction: Transaction = {
+      type: "incoming",
+      category: "transfer",
+      title: "M-Pesa Deposit",
+      amount: amount,
+      time: "Just now"
+    };
+    setTransactions(prev => [newTransaction, ...prev]);
+    
+    toast.success("Money added successfully!", {
+      description: `KES ${amount.toLocaleString()} has been added to your wallet`
+    });
+  };
+
+  const handleSendMoneySuccess = (amount: number, recipient: string) => {
+    // Update wallet balance
+    setWalletData(prev => ({
+      ...prev,
+      daily: {
+        ...prev.daily,
+        amount: Math.max(0, prev.daily.amount - amount),
+        progress: Math.min(100, prev.daily.progress + (amount / 100) * 40)
+      }
+    }));
+    
+    // Add transaction to history
+    const newTransaction: Transaction = {
+      type: "outgoing",
+      category: "transfer",
+      title: `Sent to ${recipient.slice(-8)}`,
+      amount: amount,
+      time: "Just now"
+    };
+    setTransactions(prev => [newTransaction, ...prev]);
+    
+    toast.success("Money sent successfully!", {
+      description: `KES ${amount.toLocaleString()} sent to ${recipient}`
+    });
   };
 
   const handleAdjustPlan = () => {
@@ -44,6 +113,9 @@ export default function Index() {
   const handleHistory = () => {
     toast.info("Transaction History", { description: "Feature coming soon!" });
   };
+
+  const totalBalance = walletData.daily.amount + walletData.weekly.amount + 
+                       walletData.monthly.amount + walletData.savings.amount;
 
   return (
     <div className="min-h-screen bg-background">
@@ -70,11 +142,11 @@ export default function Index() {
           >
             <WalletCard
               title="Today's Money"
-              amount={mockWalletData.daily.amount}
+              amount={walletData.daily.amount}
               icon={Wallet}
               variant="daily"
-              subtitle="KES 40 remaining"
-              progress={mockWalletData.daily.progress}
+              subtitle={`KES ${Math.max(0, walletData.daily.amount - 60)} remaining`}
+              progress={walletData.daily.progress}
             />
           </motion.div>
 
@@ -82,14 +154,14 @@ export default function Index() {
           <div className="grid grid-cols-2 gap-3">
             <WalletCard
               title="This Week"
-              amount={mockWalletData.weekly.amount}
+              amount={walletData.weekly.amount}
               icon={Calendar}
               variant="weekly"
               delay={0.1}
             />
             <WalletCard
               title="This Month"
-              amount={mockWalletData.monthly.amount}
+              amount={walletData.monthly.amount}
               icon={CalendarDays}
               variant="monthly"
               delay={0.2}
@@ -104,7 +176,7 @@ export default function Index() {
           >
             <WalletCard
               title="Total Savings"
-              amount={mockWalletData.savings.amount}
+              amount={walletData.savings.amount}
               icon={PiggyBank}
               variant="savings"
               subtitle="Earning 13% annual interest"
@@ -113,8 +185,8 @@ export default function Index() {
 
           {/* Interest Banner */}
           <InterestBanner
-            interestEarned={mockWalletData.savings.interest}
-            totalSavings={mockWalletData.savings.amount}
+            interestEarned={walletData.savings.interest}
+            totalSavings={walletData.savings.amount}
           />
 
           {/* Quick Actions */}
@@ -143,9 +215,9 @@ export default function Index() {
             </div>
 
             <div className="rounded-2xl border border-border bg-card overflow-hidden">
-              {mockTransactions.map((tx, index) => (
+              {transactions.slice(0, 4).map((tx, index) => (
                 <TransactionItem
-                  key={index}
+                  key={`${tx.title}-${index}`}
                   type={tx.type}
                   category={tx.category}
                   title={tx.title}
@@ -161,6 +233,20 @@ export default function Index() {
 
       {/* Bottom Navigation */}
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Modals */}
+      <AddMoneyModal
+        isOpen={isAddMoneyOpen}
+        onClose={() => setIsAddMoneyOpen(false)}
+        onSuccess={handleAddMoneySuccess}
+      />
+
+      <SendMoneyModal
+        isOpen={isSendMoneyOpen}
+        onClose={() => setIsSendMoneyOpen(false)}
+        availableBalance={walletData.daily.amount}
+        onSuccess={handleSendMoneySuccess}
+      />
     </div>
   );
 }
