@@ -1,13 +1,17 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   User, Shield, Bell, HelpCircle, 
   ChevronRight, LogOut, Phone, Mail,
-  Building2, CreditCard, FileText, Settings
+  Building2, CreditCard, FileText, Settings,
+  Edit2
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Button } from "@/components/ui/button";
+import { SettingsModal, ProfileEditModal, HelpModal } from "@/components/modals";
+import { toast } from "sonner";
 
 interface MenuItem {
   icon: React.ElementType;
@@ -50,45 +54,71 @@ function MenuSection({ title, items }: { title: string; items: MenuItem[] }) {
 }
 
 export default function ProfilePage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  const [profile, setProfile] = useState({
+    name: "John Mwangi",
+    phone: "+254 712 345 678",
+    email: "john.mwangi@email.com",
+  });
+
+  const handleLogout = () => {
+    toast.success("Logged out successfully");
+    navigate("/onboarding");
+  };
+
+  const handleProfileSave = (updatedProfile: typeof profile) => {
+    setProfile(updatedProfile);
+  };
 
   const accountItems: MenuItem[] = [
-    { icon: User, label: "Personal Information", description: "Name, ID, phone number" },
-    { icon: Building2, label: "Bank Connection", description: "Equity Bank linked" },
-    { icon: CreditCard, label: "Payment Methods", description: "M-Pesa, Bank transfer" },
+    { icon: User, label: "Personal Information", description: "Name, ID, phone number", onClick: () => setIsProfileEditOpen(true) },
+    { icon: Building2, label: "Bank Connection", description: "Equity Bank linked", onClick: () => toast.info("Bank settings coming soon") },
+    { icon: CreditCard, label: "Payment Methods", description: "M-Pesa, Bank transfer", onClick: () => toast.info("Payment methods coming soon") },
   ];
 
   const settingsItems: MenuItem[] = [
-    { icon: Bell, label: "Notifications", description: "Manage your alerts" },
-    { icon: Shield, label: "Security", description: "PIN, biometrics, privacy" },
-    { icon: Settings, label: "Preferences", description: "App settings" },
+    { icon: Bell, label: "Notifications", description: "Manage your alerts", onClick: () => setIsSettingsOpen(true) },
+    { icon: Shield, label: "Security", description: "PIN, biometrics, privacy", onClick: () => setIsSettingsOpen(true) },
+    { icon: Settings, label: "Preferences", description: "App settings", onClick: () => setIsSettingsOpen(true) },
   ];
 
   const supportItems: MenuItem[] = [
-    { icon: HelpCircle, label: "Help Center", description: "FAQs and guides" },
-    { icon: Phone, label: "Contact Support", description: "Get in touch" },
-    { icon: FileText, label: "Terms & Privacy", description: "Legal documents" },
+    { icon: HelpCircle, label: "Help Center", description: "FAQs and guides", onClick: () => setIsHelpOpen(true) },
+    { icon: Phone, label: "Contact Support", description: "Get in touch", onClick: () => toast.info("Call: 0800 123 456") },
+    { icon: FileText, label: "Terms & Privacy", description: "Legal documents", onClick: () => toast.info("Opening terms...") },
   ];
 
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-md px-4 pb-24">
-        <Header userName="John" />
+        <Header userName={profile.name.split(" ")[0]} />
 
         <main className="space-y-5">
           {/* Profile Card */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="rounded-2xl gradient-hero p-6 text-primary-foreground"
+            className="rounded-2xl gradient-hero p-6 text-primary-foreground relative"
           >
+            <button 
+              onClick={() => setIsProfileEditOpen(true)}
+              className="absolute top-4 right-4 p-2 rounded-xl bg-white/20 hover:bg-white/30 transition-colors"
+            >
+              <Edit2 className="h-4 w-4" />
+            </button>
+            
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 text-2xl font-bold">
-                JM
+                {profile.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
               </div>
               <div className="flex-1">
-                <h2 className="text-xl font-bold">John Mwangi</h2>
-                <p className="text-sm opacity-80">+254 712 345 678</p>
+                <h2 className="text-xl font-bold">{profile.name}</h2>
+                <p className="text-sm opacity-80">{profile.phone}</p>
                 <p className="text-xs opacity-60 mt-0.5">Member since Dec 2024</p>
               </div>
             </div>
@@ -140,6 +170,7 @@ export default function ProfilePage() {
             <Button 
               variant="ghost" 
               className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={handleLogout}
             >
               <LogOut className="h-5 w-5" />
               Log Out
@@ -154,6 +185,16 @@ export default function ProfilePage() {
       </div>
 
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Modals */}
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <ProfileEditModal 
+        isOpen={isProfileEditOpen} 
+        onClose={() => setIsProfileEditOpen(false)} 
+        currentProfile={profile}
+        onSave={handleProfileSave}
+      />
+      <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
     </div>
   );
 }
